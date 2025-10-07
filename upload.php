@@ -1,50 +1,46 @@
 <?php
 
-if (!isset($_FILES['profileImage'])) {
-    die("No profile image was provided!");
-}
+require_once __DIR__ . "/models/images.php";
 
-// Check file size
+$image = new Images();
+
 $imageSize = $_FILES['profileImage']['size'];
-$maxFileSize = 2 * 1024 * 1024; // 2MB
 
-if ($imageSize > $maxFileSize) {
-    die("The image file is too large!");
-}
+if(!$image ->isValidSize($imageSize)) {
+    die ("Slika je golema");    
+} 
 
-// The image can be a maximum of 1980px wide and 1024px high
-$maxWidth = 1980;
-$maxHeight = 1024;
+$imageType = pathinfo($_FILES['profileImage']['name'], PATHINFO_EXTENSION);
+if(!$image->isValidExtension($imageType)) {
+    die("Nije dobra ekstenzija slike");
+} 
 
 list($width, $height) = getimagesize($_FILES['profileImage']['tmp_name']);
+if(!$image->isValidDimensions($width, $height)) {
+    die("Slika je presiroka | previsoka");
+} 
 
-if ($width > $maxWidth || $height > $maxHeight) {
-    die("The image is too large! Maximum allowed width is $maxWidth px and height is $maxHeight px.");
-}
-
-// Check file extension
-$allowedExtensions = ["jpg", "jpeg", "png", "gif"];
-$imageType = pathinfo($_FILES['profileImage']['name'], PATHINFO_EXTENSION);
-
-if (!in_array(strtolower($imageType), $allowedExtensions)) {
-    die("Invalid image format! Allowed formats are: " . implode(', ', $allowedExtensions));
-}
-
-$imageName = time() . "." . $imageType;
-
-$finalPath = "./uploads/$imageName";
-$tempFileName = $_FILES['profileImage']['tmp_name'];
-
-// Create uploads directory if it doesn't exist
-if (!is_dir('./uploads')) {
+$randomName = $image->generateRandomName('jpg');
+if (!is_dir('./uploads') ) {
     mkdir('./uploads', 0755, true);
 }
 
-// Move uploaded file
-$imageUploaded = move_uploaded_file($tempFileName, $finalPath);
+$image->upload($_FILES['profileImage']['tmp_name'], $randomName, "uploads");
 
-if ($imageUploaded) {
-    die("Image uploaded successfully!");
-} else {
-    die("Failed to upload the image!");
+
+$connection = mysqli_connect("localhost", "root", "root", "php23", 8889);
+
+if (!$connection) {
+    die("Database connection failed: " . mysqli_connect_error());
 }
+
+$imageName = $connection->real_escape_string($randomName);
+$query = "INSERT INTO images (image) VALUES ('$imageName')";
+
+if ($connection->query($query)) {
+    echo "Image uploaded successfully!";
+} else {
+    echo "Database error: " . $connection->error;
+}
+
+?>
