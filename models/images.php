@@ -18,25 +18,17 @@ class Images extends DB {
     }
 
     public function isValidDimensions ($width, $height) {
-        if($width > self::MAX_IMAGE_WIDTH || $height> self::MAX_IMAGE_HEIGHT){
-            return false;
-        }
-        return true;
+     
+        return $width <= self::MAX_IMAGE_WIDTH || $height <= self::MAX_IMAGE_HEIGHT;
     }
 
     public function isValidExtension($extension) {
-        if(!in_array($extension, self::ALLOWE_EXTENSION)) {
-            return false;
-        }
-        return true;
+    
+        return in_array($extension, self::ALLOWE_EXTENSION);
     }
 
     public function isValidSize($size) {
-
-        if($size > self::MAX_FILE_SIZE) {
-            return false;
-        }
-        return true;
+        return $size <= self::MAX_FILE_SIZE;
     }
 
      public function generateRandomName($extension) {
